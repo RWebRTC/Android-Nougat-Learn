@@ -629,6 +629,7 @@ int main(int argc, char** argv) {
     open_devnull_stdio();
     // 初始化 kernel log
     klog_init();
+    // 设置日志级别
     klog_set_level(KLOG_NOTICE_LEVEL);
 
     NOTICE("init %s started!\n", is_first_stage ? "first stage" : "second stage");
