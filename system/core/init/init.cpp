@@ -85,7 +85,7 @@ bool waiting_for_exec = false;
 
 static int epoll_fd = -1;
 
-// 注册spoll句柄
+// TODO 注册spoll句柄
 void register_epoll_handler(int fd, void (*fn)()) {
     epoll_event ev;
     ev.events = EPOLLIN;
@@ -592,10 +592,12 @@ static void selinux_initialize(bool in_kernel_domain) {
 //内核加载后执行的第一个用户级别进程
 int main(int argc, char** argv) {
     if (!strcmp(basename(argv[0]), "ueventd")) {
+        // 解析 /ueventd.rc 文件，并创建相应的设备结点
         return ueventd_main(argc, argv);
     }
 
     if (!strcmp(basename(argv[0]), "watchdogd")) {
+        // 定时向 "/dev/watchdog" 执行写操作
         return watchdogd_main(argc, argv);
     }
 
@@ -651,7 +653,7 @@ int main(int argc, char** argv) {
     }
 
     // Set up SELinux, including loading the SELinux policy if we're in the kernel domain.
-    // 这里提到了 SELinux，有时间需要考虑一下
+    // TODO 这里提到了 SELinux，有时间需要考虑一下
     selinux_initialize(is_first_stage);
 
     // If we're in the kernel domain, re-exec init to transition to the init domain now
@@ -706,7 +708,7 @@ int main(int argc, char** argv) {
 
     ActionManager& am = ActionManager::GetInstance();
 
-    // 执行rc文件on early-init触发器
+    // 执行rc文件on early-init触发器，创建相应的设备结点
     am.QueueEventTrigger("early-init");
 
     // Queue an action that waits for coldboot done so we know ueventd has set up all of /dev...
@@ -718,7 +720,7 @@ int main(int argc, char** argv) {
     am.QueueBuiltinAction(console_init_action, "console_init");
 
     // Trigger all the boot actions to get us started.
-    // 执行rc文件on init触发器
+    // 执行rc文件on init触发器， 创建/挂载一些目录，以及 symlink 等
     am.QueueEventTrigger("init");
 
     // Repeat mix_hwrng_into_linux_rng in case /dev/hw_random or /dev/random
@@ -732,6 +734,7 @@ int main(int argc, char** argv) {
         am.QueueEventTrigger("charger");
     } else {
         // 执行rc文件on late-init触发器
+        // 会启动很多服务，包括比较关键的 ServiceManager
         am.QueueEventTrigger("late-init");
     }
 
