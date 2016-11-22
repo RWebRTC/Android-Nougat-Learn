@@ -23,6 +23,16 @@ import android.system.ErrnoException;
 import android.system.Os;
 
 /** @hide */
+/***************************************************************************
+ps -t | grep "537"
+zygote64 的子线程，VSIZE代表虚拟地址空间，一个线程中
+USER      PID   PPID  VSIZE   RSS   WCHAN              PC  NAME
+root      537   1     2161140 96500 poll_sched 7f95f2d494 S zygote64
+root      27837 537   2161140 96500 futex_wait 7f95ee0fa0 S ReferenceQueueD
+root      27838 537   2161140 96500 futex_wait 7f95ee0fa0 S FinalizerDaemon
+root      27839 537   2161140 96500 futex_wait 7f95ee0fa0 S FinalizerWatchd
+root      27840 537   2161140 96500 futex_wait 7f95ee0fa0 S HeapTaskDaemon
+****************************************************************************/
 public final class Zygote {
     /*
     * Bit values for "debugFlags" argument.  The definitions are duplicated
@@ -91,7 +101,9 @@ public final class Zygote {
     public static int forkAndSpecialize(int uid, int gid, int[] gids, int debugFlags,
           int[][] rlimits, int mountExternal, String seInfo, String niceName, int[] fdsToClose,
           String instructionSet, String appDataDir) {
+        // 停止Zygote的4个Daemon子线程的运行，初始化gc堆
         VM_HOOKS.preFork();
+        // 调用fork()创建新进程，设置新进程的主线程id，重置gc性能数据，设置信号处理函数等功能。
         int pid = nativeForkAndSpecialize(
                   uid, gid, gids, debugFlags, rlimits, mountExternal, seInfo, niceName, fdsToClose,
                   instructionSet, appDataDir);
@@ -102,6 +114,7 @@ public final class Zygote {
             // Note that this event ends at the end of handleChildProc,
             Trace.traceBegin(Trace.TRACE_TAG_ACTIVITY_MANAGER, "PostFork");
         }
+        // 启动4个Deamon子线程
         VM_HOOKS.postForkCommon();
         return pid;
     }
@@ -135,6 +148,7 @@ public final class Zygote {
      */
     public static int forkSystemServer(int uid, int gid, int[] gids, int debugFlags,
             int[][] rlimits, long permittedCapabilities, long effectiveCapabilities) {
+        // 静态成员变量VM_HOOKS = new ZygoteHooks();
         VM_HOOKS.preFork();
         // 调用native方法fork system_server进程
         int pid = nativeForkSystemServer(

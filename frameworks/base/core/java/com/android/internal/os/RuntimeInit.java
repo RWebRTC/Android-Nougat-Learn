@@ -295,6 +295,7 @@ public class RuntimeInit {
         commonInit();
         // zygote初始化
         nativeZygoteInit();
+        // 应用初始化
         applicationInit(targetSdkVersion, argv, classLoader);
     }
 

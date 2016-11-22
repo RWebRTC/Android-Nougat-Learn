@@ -471,7 +471,14 @@ static pid_t ForkAndSpecializeCommon(JNIEnv* env, uid_t uid, gid_t gid, jintArra
     RuntimeAbort(env, __LINE__, "Unable to restat file descriptor table.");
   }
 
+  // fork子进程
   pid_t pid = fork();
+  /**
+   * fork采用标准方法，调用一次，返回两次，返回值包括
+   *   1. 父进程返回新创建子进程pid
+   *   2. 子进程，fork返回0
+   *   3. 出现错误，fork返回负数（线程数超过上限或系统内存不足）
+   */
 
   if (pid == 0) {
     // The child process.
@@ -643,6 +650,7 @@ static jint com_android_internal_os_Zygote_nativeForkAndSpecialize(
         jint debug_flags, jobjectArray rlimits,
         jint mount_external, jstring se_info, jstring se_name,
         jintArray fdsToClose, jstring instructionSet, jstring appDataDir) {
+    // 将CAP_WAKE_ALARM赋予蓝牙进程
     jlong capabilities = 0;
 
     // Grant CAP_WAKE_ALARM to the Bluetooth process.
